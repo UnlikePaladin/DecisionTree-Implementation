@@ -15,31 +15,31 @@ Run `pytest` to check the skeleton; extend the tests as you implement.
 
 Build the tree incrementally; finish and test each phase before moving on.
 
-- [ ] **Phase 1: Minimal classification tree**
-  - [ ] Implement one impurity criterion (e.g. Gini).
-  - [ ] Implement a basic split search (try every candidate split, keep the best).
-  - [ ] Grow the tree recursively, stop on pure nodes, and store the majority class in leaves.
-  - [ ] Implement `predict` by traversing the tree.
-- [ ] **Phase 2: Numeric and categorical features**
-  - [ ] Numeric: binary splits on a threshold (`x <= t`), using midpoints between sorted unique values.
-  - [ ] Categorical: one-vs-rest splits (`x == c`) or subset/grouped splits.
-  - [ ] Detect feature types (or let the user declare them) and route each to the right split search.
-  - [ ] Decide how to handle categories unseen during `fit` at inference time (e.g. send to the majority child or return the node's prediction).
-- [ ] **Phase 3: Second classification criterion**
-  - [ ] Support both Gini and Entropy via the `criterion` hyperparameter.
-  - [ ] Validate the criterion name and compare the resulting trees.
+- [x] **Phase 1: Minimal classification tree**
+  - [x] Implement one impurity criterion (e.g. Gini).
+  - [x] Implement a basic split search (try every candidate split, keep the best).
+  - [x] Grow the tree recursively, stop on pure nodes, and store the majority class in leaves.
+  - [x] Implement `predict` by traversing the tree.
+- [x] **Phase 2: Numeric and categorical features**
+  - [x] Numeric: binary splits on a threshold (`x <= t`), using midpoints between sorted unique values.
+  - [x] Categorical: one-vs-rest splits (`x == c`) or subset/grouped splits.
+  - [x] Detect feature types (or let the user declare them) and route each to the right split search.
+  - [x] Decide how to handle categories unseen during `fit` at inference time (e.g. send to the majority child or return the node's prediction).
+- [x] **Phase 3: Second classification criterion**
+  - [x] Support both Gini and Entropy via the `criterion` hyperparameter.
+  - [x] Validate the criterion name and compare the resulting trees.
 - [ ] **Phase 4: Hyperparameters**
   - [ ] `max_depth`, `min_samples_split`, `min_samples_leaf`.
   - [ ] `max_features` (random feature subset per split) and, optionally, `min_impurity_decrease`.
-  - [ ] Validate parameter values and test edge cases (e.g. `max_depth=0`).
+  - [x] Validate parameter values and test edge cases (e.g. `max_depth=0`).
 - [ ] **Phase 5: Validation, evaluation and tests**
-  - [ ] Implement `eval` with metrics such as accuracy.
+  - [x] Implement `eval` with metrics such as accuracy.
   - [ ] Add a train/validation split or cross-validation helper.
-  - [ ] Write unit tests: impurity values, split search, numeric/categorical data, unseen categories, hyperparameter limits.
-- [ ] **Phase 6: Regression tree**
-  - [ ] Use variance / MSE reduction as the split criterion (optionally MAE).
-  - [ ] Store the mean (or median) of the targets in leaves.
-  - [ ] Reuse the numeric and categorical split logic; evaluate with MSE / R².
+  - [x] Write unit tests: impurity values, split search, numeric/categorical data, unseen categories, hyperparameter limits.
+- [x] **Phase 6: Regression tree**
+  - [x] Use variance / MSE reduction as the split criterion (optionally MAE).
+  - [x] Store the mean (or median) of the targets in leaves.
+  - [x] Reuse the numeric and categorical split logic; evaluate with MSE / R².
 - [ ] **Phase 7: Optional advanced enhancements**
   - [ ] Pruning (pre- or post-pruning, e.g. cost-complexity).
   - [ ] Feature importance.

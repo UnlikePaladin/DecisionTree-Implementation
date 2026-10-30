@@ -1,6 +1,10 @@
 """Base class for decision trees with a scikit-learn like API."""
 from abc import ABC, abstractmethod
 
+import numpy as np
+
+from .node import Node
+
 
 class BaseDecisionTree(ABC):
     """Skeleton shared by every tree variant (classification, regression, ...).
@@ -81,7 +85,23 @@ class BaseDecisionTree(ABC):
         Returns:
             BaseDecisionTree: ``self`` (the fitted estimator).
         """
-        raise NotImplementedError("TODO: implement fit")
+        if self.max_depth is not None and (not isinstance(self.max_depth, int) or self.max_depth < 1):
+            raise ValueError("max_depth must be None or a positive int")
+        if not isinstance(self.min_samples_split, int) or self.min_samples_split < 2:
+            raise ValueError("min_samples_split must be an int >= 2")
+        if self.criterion not in self.criteria:
+            raise ValueError(f"criterion must be one of {self.criteria}")
+
+        X = np.array(X, dtype=float)
+        y = np.array(y)
+        if len(X) != len(y):
+            raise ValueError("X and y must have the same number of samples")
+
+        # One-hot (categorical) columns only have 0s and 1s
+        self.is_one_hot = [np.isin(X[:, j], [0, 1]).all() for j in range(X.shape[1])]
+
+        self.root = self._build_tree(X, y, depth=0)
+        return self
 
     def predict(self, X):
         """Predict a target for each row of ``X``.
@@ -98,7 +118,20 @@ class BaseDecisionTree(ABC):
         Returns:
             array, shape (n_samples,): Predicted target for every sample.
         """
-        raise NotImplementedError("TODO: implement predict")
+        if self.root is None:
+            raise ValueError("Model is not fitted, call fit first")
+
+        X = np.array(X, dtype=float)
+        y_pred = []
+        for x in X:
+            node = self.root
+            while not node.is_leaf:
+                if x[node.feature_index] <= node.threshold:
+                    node = node.left
+                else:
+                    node = node.right
+            y_pred.append(node.value)
+        return np.array(y_pred)
 
     def eval(self, X, y):
         """Score the model on ``(X, y)``.
@@ -114,7 +147,8 @@ class BaseDecisionTree(ABC):
             float: Metric value (accuracy for classification, R^2 for
             regression; higher is better).
         """
-        raise NotImplementedError("TODO: implement eval")
+        y_pred = self.predict(X)
+        return self._score(np.array(y), y_pred)
 
     @abstractmethod
     def _build_tree(self, X, y, depth):
@@ -135,6 +169,22 @@ class BaseDecisionTree(ABC):
         Returns:
             Node: Subtree built from this data.
         """
+        # Stopping conditions -> leaf
+        if self.max_depth is not None and depth >= self.max_depth:
+            return Node(value=self._leaf_value(y))
+        if len(y) < self.min_samples_split or len(np.unique(y)) == 1:
+            return Node(value=self._leaf_value(y))
+
+        split = self._best_split(X, y)
+        if split is None:
+            return Node(value=self._leaf_value(y))
+
+        feature, threshold = split
+        left = X[:, feature] <= threshold
+        node = Node(feature_index=feature, threshold=threshold)
+        node.left = self._build_tree(X[left], y[left], depth + 1)
+        node.right = self._build_tree(X[~left], y[~left], depth + 1)
+        return node
 
     @abstractmethod
     def _impurity(self, y):
@@ -170,6 +220,36 @@ class BaseDecisionTree(ABC):
             tuple (int, float) or None: ``(feature_index, threshold)`` of the
             best split, or ``None`` if no split improves impurity.
         """
+        parent_impurity = self._impurity(y)
+        n = len(y)
+        best_gain = 0
+        best_split = None
+
+        for feature in range(X.shape[1]):
+            column = X[:, feature]
+            if self.is_one_hot[feature]:
+                # One-hot column: category (1) vs rest (0)
+                # unseen categories are all 0s so they go with the rest
+                thresholds = [0.5]
+            else:
+                # Midpoints between sorted unique values
+                values = np.unique(column)
+                thresholds = (values[:-1] + values[1:]) / 2
+
+            for threshold in thresholds:
+                left = column <= threshold
+                n_left = left.sum()
+                if n_left == 0 or n_left == n:
+                    continue
+
+                # Weighted impurity of the children
+                child_impurity = (n_left * self._impurity(y[left]) + (n - n_left) * self._impurity(y[~left])) / n
+                gain = parent_impurity - child_impurity
+                if gain > best_gain:
+                    best_gain = gain
+                    best_split = (feature, threshold)
+
+        return best_split
 
     @abstractmethod
     def _leaf_value(self, y):

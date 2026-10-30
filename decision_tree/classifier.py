@@ -1,4 +1,6 @@
 """Classification tree skeleton."""
+import numpy as np
+
 from .base import BaseDecisionTree
 
 
@@ -13,6 +15,8 @@ class DecisionTreeClassifier(BaseDecisionTree):
     Each hook below documents what it receives and must return; see
     ``BaseDecisionTree`` for the full contract.
     """
+
+    criteria = ["gini", "entropy"]
 
     def __init__(self, max_depth=None, min_samples_split=2, criterion="gini"):
         super().__init__(max_depth, min_samples_split, criterion)
@@ -29,7 +33,7 @@ class DecisionTreeClassifier(BaseDecisionTree):
             Node: Leaf (when a stopping rule triggers) or internal node with
             two subtrees built from the best split.
         """
-        raise NotImplementedError("TODO")
+        return super()._build_tree(X, y, depth)
 
     def _impurity(self, y):
         """Impurity of ``y`` per ``self.criterion``: Gini impurity 1 - sum(p_k^2) or entropy -sum(p_k * log2(p_k)), where p_k is the fraction of samples of class k.
@@ -40,7 +44,11 @@ class DecisionTreeClassifier(BaseDecisionTree):
         Returns:
             float: Impurity (0 if pure).
         """
-        raise NotImplementedError("TODO: gini / entropy")
+        _, counts = np.unique(y, return_counts=True)
+        p = counts / len(y)
+        if self.criterion == "gini":
+            return 1 - np.sum(p ** 2)
+        return -np.sum(p * np.log2(p))
 
     def _best_split(self, X, y):
         """Search all features/thresholds for the largest impurity decrease.
@@ -53,7 +61,7 @@ class DecisionTreeClassifier(BaseDecisionTree):
             tuple (int, float) or None: ``(feature_index, threshold)``, or
             None if no split reduces impurity.
         """
-        raise NotImplementedError("TODO")
+        return super()._best_split(X, y)
 
     def _leaf_value(self, y):
         """Return the majority (most frequent) class of y.
@@ -64,7 +72,8 @@ class DecisionTreeClassifier(BaseDecisionTree):
         Returns:
             The prediction for the leaf.
         """
-        raise NotImplementedError("TODO: majority class")
+        values, counts = np.unique(y, return_counts=True)
+        return values[np.argmax(counts)]
 
     def _score(self, y_true, y_pred):
         """Metric for ``eval``: accuracy = fraction of correct predictions.
@@ -76,4 +85,4 @@ class DecisionTreeClassifier(BaseDecisionTree):
         Returns:
             float: Score (higher is better).
         """
-        raise NotImplementedError("TODO: accuracy")
+        return np.mean(y_true == y_pred)
